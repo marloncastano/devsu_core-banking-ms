@@ -5,8 +5,8 @@ services:
     image: postgres:17-alpine
     container_name: core-banking-postgres
     environment:
-      POSTGRES_USER: ${DB_USER:?DB_USER requerido}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requerido}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: postgres
     ports:
       - "${DB_PORT:-5432}:5432"
@@ -14,7 +14,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d db_cuentas"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d accounts_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,8 +23,8 @@ services:
     image: rabbitmq:4-management-alpine
     container_name: core-banking-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER requerido}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD requerido}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
@@ -36,7 +36,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # clientes-service y cuentas-service se agregan en el paso 6 (Dockerfiles multi-stage).
+  # customers-service and accounts-service will be added with their multi-stage Dockerfiles.
 
 volumes:
   postgres-data:
