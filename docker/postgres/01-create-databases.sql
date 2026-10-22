@@ -1,3 +1,3 @@
--- Database per service: una base de datos por microservicio en la misma instancia.
-CREATE DATABASE db_clientes;
-CREATE DATABASE db_cuentas;
+-- Database per service: one database per microservice in the same instance.
+CREATE DATABASE customers_db;
+CREATE DATABASE accounts_db;
