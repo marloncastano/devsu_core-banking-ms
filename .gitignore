@@ -1,0 +1,23 @@
+### Maven ###
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Entorno / secretos ###
+.env
+*.env.local
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+
+### SO ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log

@@ -1,0 +1,43 @@
+name: core-banking
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: core-banking-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:?DB_USER requerido}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requerido}
+      POSTGRES_DB: postgres
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d db_cuentas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: core-banking-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER requerido}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD requerido}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # clientes-service y cuentas-service se agregan en el paso 6 (Dockerfiles multi-stage).
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
