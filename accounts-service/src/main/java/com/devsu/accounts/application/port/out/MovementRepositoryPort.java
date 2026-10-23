@@ -1,5 +1,7 @@
 package com.devsu.accounts.application.port.out;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +16,12 @@ public interface MovementRepositoryPort {
 	Optional<Movement> findByMovementId(UUID movementId);
 
 	Optional<Movement> findByIdempotencyKey(String idempotencyKey);
+
+	/**
+	 * Movements of every account of the customer in {@code [from, toExclusive)}, grouped by account and oldest
+	 * first within each account.
+	 */
+	List<Movement> findByCustomerBetween(UUID customerId, Instant from, Instant toExclusive);
 
 	/**
 	 * Most recent first.

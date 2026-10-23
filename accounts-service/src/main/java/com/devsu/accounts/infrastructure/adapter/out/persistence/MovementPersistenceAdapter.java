@@ -1,5 +1,7 @@
 package com.devsu.accounts.infrastructure.adapter.out.persistence;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -47,6 +49,12 @@ class MovementPersistenceAdapter implements MovementRepositoryPort {
 	@Override
 	public Optional<Movement> findByIdempotencyKey(String idempotencyKey) {
 		return movementJpaRepository.findByIdempotencyKey(idempotencyKey).map(MovementPersistenceAdapter::toDomain);
+	}
+
+	@Override
+	public List<Movement> findByCustomerBetween(UUID customerId, Instant from, Instant toExclusive) {
+		return movementJpaRepository.findByCustomerBetween(customerId, from, toExclusive).stream()
+				.map(MovementPersistenceAdapter::toDomain).toList();
 	}
 
 	/**
