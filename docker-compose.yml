@@ -1,5 +1,25 @@
 name: core-banking
 
+# Shared settings of both microservices. Inside the Docker network they reach PostgreSQL and RabbitMQ by service
+# name on their internal ports, whatever host ports are published.
+x-service-environment: &service-environment
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_USER: ${DB_USER:?DB_USER is required}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: 5672
+  RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+  # Bank time zone: account statement dates are whole days in this zone.
+  JAVA_TOOL_OPTIONS: -Duser.timezone=${BANK_TIME_ZONE:-America/Guayaquil}
+
+x-service-healthcheck: &service-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 30s
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -36,7 +56,43 @@ services:
       timeout: 5s
       retries: 5
 
-  # customers-service and accounts-service will be added with their multi-stage Dockerfiles.
+  customers-service:
+    build: ./customers-service
+    image: core-banking/customers-service:latest
+    container_name: core-banking-customers
+    environment:
+      <<: *service-environment
+      DB_NAME: customers_db
+    ports:
+      - "${CUSTOMERS_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health/readiness"]
+    restart: unless-stopped
+
+  accounts-service:
+    build: ./accounts-service
+    image: core-banking/accounts-service:latest
+    container_name: core-banking-accounts
+    environment:
+      <<: *service-environment
+      DB_NAME: accounts_db
+    ports:
+      - "${ACCOUNTS_PORT:-8082}:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health/readiness"]
+    restart: unless-stopped
 
 volumes:
   postgres-data:
