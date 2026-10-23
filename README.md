@@ -93,7 +93,27 @@ docker compose down
 
 ### Base de datos
 
-El esquema lo crea **Flyway** al arrancar cada servicio (`*/src/main/resources/db/migration`). El script consolidado con el esquema de ambas bases y los datos de los casos de uso está en [`BaseDatos.sql`](BaseDatos.sql).
+El esquema lo crea **Flyway** al arrancar cada servicio (`*/src/main/resources/db/migration`). El script consolidado con el esquema de ambas bases y los datos de los casos de uso está en [`BaseDatos.sql`](BaseDatos.sql): los 3 clientes del enunciado (contraseñas cifradas con BCrypt), las cuentas con sus números exactos (478758, 225487, 495878, 496825, 585545) y sus movimientos.
+
+Para cargar los datos de ejemplo en el entorno de Docker:
+
+```bash
+docker exec -i core-banking-postgres psql -U devsu -d postgres < BaseDatos.sql
+```
+
+El script es idempotente: en un servidor vacío crea las bases, el esquema y los datos; sobre bases ya creadas por los servicios solo añade los datos que falten. Los servicios también arrancan sobre bases creadas por el script (Flyway toma ese esquema como *baseline*).
+
+Con los datos cargados, el reporte del caso de uso 5 es:
+
+```
+GET http://localhost:8082/api/reportes?fecha=2022-02-01,2022-02-28&cliente=b1a5e5c0-1d2e-4f3a-8b4c-5d6e7f8a9b02
+```
+
+| Cliente | customerId |
+|---|---|
+| Jose Lema | `b1a5e5c0-1d2e-4f3a-8b4c-5d6e7f8a9b01` |
+| Marianela Montalvo | `b1a5e5c0-1d2e-4f3a-8b4c-5d6e7f8a9b02` |
+| Juan Osorio | `b1a5e5c0-1d2e-4f3a-8b4c-5d6e7f8a9b03` |
 
 ## API
 
