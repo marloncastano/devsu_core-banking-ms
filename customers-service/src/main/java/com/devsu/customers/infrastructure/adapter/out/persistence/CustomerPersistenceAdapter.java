@@ -1,10 +1,15 @@
 package com.devsu.customers.infrastructure.adapter.out.persistence;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+
+import com.devsu.customers.application.pagination.PageQuery;
+import com.devsu.customers.application.pagination.PageResult;
 
 import com.devsu.customers.application.port.out.CustomerRepositoryPort;
 import com.devsu.customers.domain.model.Customer;
@@ -38,9 +43,15 @@ class CustomerPersistenceAdapter implements CustomerRepositoryPort {
 		return customerJpaRepository.findByCustomerId(customerId).map(CustomerPersistenceAdapter::toDomain);
 	}
 
+	/**
+	 * Sorted by technical id so pages are stable: the same customer never appears on two pages.
+	 */
 	@Override
-	public List<Customer> findAll() {
-		return customerJpaRepository.findAll().stream().map(CustomerPersistenceAdapter::toDomain).toList();
+	public PageResult<Customer> findAll(PageQuery query) {
+		Page<CustomerEntity> page = customerJpaRepository.findAll(
+				PageRequest.of(query.page(), query.size(), Sort.by(Sort.Direction.ASC, "id")));
+		return new PageResult<>(page.getContent(), query.page(), query.size(), page.getTotalElements())
+				.map(CustomerPersistenceAdapter::toDomain);
 	}
 
 	@Override

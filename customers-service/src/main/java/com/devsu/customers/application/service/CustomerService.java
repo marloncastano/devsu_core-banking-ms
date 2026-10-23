@@ -2,12 +2,13 @@ package com.devsu.customers.application.service;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.devsu.customers.application.pagination.PageQuery;
+import com.devsu.customers.application.pagination.PageResult;
 import com.devsu.customers.application.port.in.CreateCustomerCommand;
 import com.devsu.customers.application.port.in.ManageCustomerUseCase;
 import com.devsu.customers.application.port.in.PatchCustomerCommand;
@@ -50,8 +51,8 @@ public class CustomerService implements ManageCustomerUseCase {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Customer> list() {
-		return customerRepository.findAll();
+	public PageResult<Customer> list(PageQuery query) {
+		return customerRepository.findAll(query);
 	}
 
 	@Override

@@ -1,8 +1,9 @@
 package com.devsu.customers.application.port.in;
 
-import java.util.List;
 import java.util.UUID;
 
+import com.devsu.customers.application.pagination.PageQuery;
+import com.devsu.customers.application.pagination.PageResult;
 import com.devsu.customers.domain.model.Customer;
 
 public interface ManageCustomerUseCase {
@@ -11,7 +12,7 @@ public interface ManageCustomerUseCase {
 
 	Customer getByCustomerId(UUID customerId);
 
-	List<Customer> list();
+	PageResult<Customer> list(PageQuery query);
 
 	Customer update(UUID customerId, UpdateCustomerCommand command);
 
