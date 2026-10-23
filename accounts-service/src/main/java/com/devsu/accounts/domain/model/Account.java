@@ -2,10 +2,13 @@ package com.devsu.accounts.domain.model;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.UUID;
 
+import com.devsu.accounts.domain.exception.AccountNotAvailableException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
 import com.devsu.accounts.domain.exception.DomainValidationException;
+import com.devsu.accounts.domain.exception.InsufficientFundsException;
 
 public class Account {
 
@@ -60,6 +63,29 @@ public class Account {
 	public static Account restore(Long id, String accountNumber, AccountType accountType, BigDecimal initialBalance,
 			BigDecimal availableBalance, boolean active, UUID customerId) {
 		return new Account(id, accountNumber, accountType, initialBalance, availableBalance, active, customerId);
+	}
+
+	/**
+	 * Applies a deposit (positive amount) or a withdrawal (negative amount) and returns the resulting ledger entry.
+	 * The balance can never become negative.
+	 */
+	public Movement registerMovement(BigDecimal amount, Instant occurredAt) {
+		if (!active) {
+			throw AccountNotAvailableException.inactive(accountNumber);
+		}
+		if (amount == null || amount.signum() == 0) {
+			throw new DomainValidationException("Amount must be different from zero");
+		}
+		if (amount.stripTrailingZeros().scale() > MONEY_SCALE) {
+			throw new DomainValidationException("Amount cannot have more than " + MONEY_SCALE + " decimals");
+		}
+		BigDecimal newBalance = availableBalance.add(amount);
+		if (newBalance.signum() < 0) {
+			throw new InsufficientFundsException();
+		}
+		this.availableBalance = newBalance.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY);
+		return new Movement(UUID.randomUUID(), id, accountNumber, MovementType.of(amount),
+				amount.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY), availableBalance, occurredAt);
 	}
 
 	private static BigDecimal toMoney(BigDecimal amount, String field) {

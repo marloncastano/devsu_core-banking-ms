@@ -44,6 +44,12 @@ class AccountPersistenceAdapter implements AccountRepositoryPort {
 		return accountJpaRepository.findByAccountNumber(accountNumber).map(AccountPersistenceAdapter::toDomain);
 	}
 
+	@Override
+	public Optional<Account> findByAccountNumberForUpdate(String accountNumber) {
+		return accountJpaRepository.findByAccountNumberForUpdate(accountNumber)
+				.map(AccountPersistenceAdapter::toDomain);
+	}
+
 	/**
 	 * Sorted by technical id so pages are stable: the same account never appears on two pages.
 	 */
