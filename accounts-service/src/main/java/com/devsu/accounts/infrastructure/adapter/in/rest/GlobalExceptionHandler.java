@@ -30,6 +30,7 @@ import com.devsu.accounts.domain.exception.AccountNotFoundException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
 import com.devsu.accounts.domain.exception.DomainValidationException;
 import com.devsu.accounts.domain.exception.InsufficientFundsException;
+import com.devsu.accounts.domain.exception.MovementNotFoundException;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
@@ -44,8 +45,8 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-	@ExceptionHandler(AccountNotFoundException.class)
-	ProblemDetail handleNotFound(AccountNotFoundException ex) {
+	@ExceptionHandler({ AccountNotFoundException.class, MovementNotFoundException.class })
+	ProblemDetail handleNotFound(RuntimeException ex) {
 		return problem(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage());
 	}
 

@@ -19,6 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
+import com.devsu.accounts.application.port.in.QueryMovementsUseCase;
 import com.devsu.accounts.application.port.in.RegisterMovementCommand;
 import com.devsu.accounts.application.port.in.RegisterMovementUseCase;
 import com.devsu.accounts.domain.exception.AccountNotAvailableException;
@@ -39,6 +40,9 @@ class MovementControllerTest {
 
 	@MockitoBean
 	private RegisterMovementUseCase registerMovement;
+
+	@MockitoBean
+	private QueryMovementsUseCase queryMovements;
 
 	@Test
 	@DisplayName("a valid withdrawal returns 201 with the resulting balance")

@@ -1,10 +1,14 @@
 package com.devsu.accounts.application.service;
 
 import java.time.Clock;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.devsu.accounts.application.pagination.PageQuery;
+import com.devsu.accounts.application.pagination.PageResult;
+import com.devsu.accounts.application.port.in.QueryMovementsUseCase;
 import com.devsu.accounts.application.port.in.RegisterMovementCommand;
 import com.devsu.accounts.application.port.in.RegisterMovementUseCase;
 import com.devsu.accounts.application.port.out.AccountRepositoryPort;
@@ -12,13 +16,14 @@ import com.devsu.accounts.application.port.out.CustomerReferenceRepositoryPort;
 import com.devsu.accounts.application.port.out.MovementRepositoryPort;
 import com.devsu.accounts.domain.exception.AccountNotAvailableException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
+import com.devsu.accounts.domain.exception.MovementNotFoundException;
 import com.devsu.accounts.domain.model.Account;
 import com.devsu.accounts.domain.model.CustomerReference;
 import com.devsu.accounts.domain.model.Movement;
 
 @Service
 @Transactional
-public class MovementService implements RegisterMovementUseCase {
+public class MovementService implements RegisterMovementUseCase, QueryMovementsUseCase {
 
 	private final AccountRepositoryPort accountRepository;
 	private final CustomerReferenceRepositoryPort customerReferenceRepository;
@@ -51,5 +56,18 @@ public class MovementService implements RegisterMovementUseCase {
 		Movement movement = account.registerMovement(command.amount(), clock.instant());
 		accountRepository.save(account);
 		return movementRepository.save(movement);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Movement getByMovementId(UUID movementId) {
+		return movementRepository.findByMovementId(movementId)
+				.orElseThrow(() -> new MovementNotFoundException(movementId));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public PageResult<Movement> list(PageQuery query, String accountNumber) {
+		return movementRepository.findAll(query, accountNumber);
 	}
 }
