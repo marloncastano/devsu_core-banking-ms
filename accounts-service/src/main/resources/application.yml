@@ -21,6 +21,12 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  web:
+    locale: en
+    locale-resolver: fixed
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
