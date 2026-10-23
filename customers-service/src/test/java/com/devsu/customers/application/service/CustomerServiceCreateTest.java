@@ -19,7 +19,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.devsu.customers.application.event.CustomerEvent;
 import com.devsu.customers.application.port.in.CreateCustomerCommand;
+import com.devsu.customers.application.port.out.CustomerEventPublisherPort;
 import com.devsu.customers.application.port.out.CustomerRepositoryPort;
 import com.devsu.customers.application.port.out.PasswordEncoderPort;
 import com.devsu.customers.domain.exception.DomainValidationException;
@@ -40,15 +42,18 @@ class CustomerServiceCreateTest {
 	@Mock
 	private PasswordEncoderPort passwordEncoder;
 
+	@Mock
+	private CustomerEventPublisherPort eventPublisher;
+
 	private CustomerService customerService;
 
 	@BeforeEach
 	void setUp() {
-		customerService = new CustomerService(customerRepository, passwordEncoder, FIXED_CLOCK);
+		customerService = new CustomerService(customerRepository, passwordEncoder, eventPublisher, FIXED_CLOCK);
 	}
 
 	@Test
-	@DisplayName("create encodes the password and saves an active customer")
+	@DisplayName("create encodes the password, saves an active customer and publishes a created event")
 	void createEncodesPasswordAndSavesCustomer() {
 		when(customerRepository.existsByIdentification("1712345678")).thenReturn(false);
 		when(passwordEncoder.encode("1234")).thenReturn("$2a$10$encoded");
@@ -63,6 +68,14 @@ class CustomerServiceCreateTest {
 		assertThat(saved.getValue().getCustomerId()).isNotNull();
 		assertThat(saved.getValue().getPersonalData().identification()).isEqualTo("1712345678");
 		assertThat(created).isSameAs(saved.getValue());
+
+		ArgumentCaptor<CustomerEvent> published = ArgumentCaptor.forClass(CustomerEvent.class);
+		verify(eventPublisher).publish(published.capture());
+		assertThat(published.getValue().type()).isEqualTo(CustomerEvent.Type.CREATED);
+		assertThat(published.getValue().customerId()).isEqualTo(created.getCustomerId());
+		assertThat(published.getValue().name()).isEqualTo("Jose Lema");
+		assertThat(published.getValue().active()).isTrue();
+		assertThat(published.getValue().occurredAt()).isEqualTo(FIXED_CLOCK.instant());
 	}
 
 	@Test
@@ -76,6 +89,7 @@ class CustomerServiceCreateTest {
 
 		verify(passwordEncoder, never()).encode(any());
 		verify(customerRepository, never()).save(any());
+		verify(eventPublisher, never()).publish(any());
 	}
 
 	@Test
@@ -89,6 +103,7 @@ class CustomerServiceCreateTest {
 				.hasMessage("Customer must be at least 18 years old");
 
 		verify(customerRepository, never()).save(any());
+		verify(eventPublisher, never()).publish(any());
 	}
 
 	private static CreateCustomerCommand command(LocalDate birthDate) {

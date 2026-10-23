@@ -31,6 +31,9 @@ public class CustomerReferenceEntity {
 	@Column(nullable = false)
 	private boolean active;
 
+	@Column(name = "last_event_at")
+	private Instant lastEventAt;
+
 	@UpdateTimestamp
 	@Setter(AccessLevel.NONE)
 	@Column(name = "updated_at", nullable = false)

@@ -1,5 +1,6 @@
 package com.devsu.accounts.infrastructure.adapter.out.persistence;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,5 +22,11 @@ class CustomerReferencePersistenceAdapter implements CustomerReferenceRepository
 	public Optional<CustomerReference> findById(UUID customerId) {
 		return customerReferenceJpaRepository.findById(customerId)
 				.map(entity -> new CustomerReference(entity.getCustomerId(), entity.getName(), entity.isActive()));
+	}
+
+	@Override
+	public boolean saveIfNotOlder(CustomerReference customer, Instant occurredAt) {
+		return customerReferenceJpaRepository.upsertIfNotOlder(customer.customerId(), customer.name(),
+				customer.active(), occurredAt) > 0;
 	}
 }
