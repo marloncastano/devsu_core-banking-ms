@@ -90,6 +90,42 @@ class CustomerTest {
 		assertThat(customer.ageOn(TODAY.plusDays(1))).isEqualTo(36);
 	}
 
+	@Test
+	@DisplayName("changing personal data keeps the identification immutable")
+	void changePersonalDataRejectsNewIdentification() {
+		Customer customer = Customer.create(personalData(LocalDate.of(1990, 5, 14)), ENCODED_PASSWORD, TODAY);
+		PersonalData withOtherIdentification = new PersonalData("Jose Lema", Gender.MALE, LocalDate.of(1990, 5, 14),
+				"9999999999", "Otavalo sn y principal", "098254785");
+
+		assertThatThrownBy(() -> customer.changePersonalData(withOtherIdentification))
+				.isInstanceOf(DomainValidationException.class)
+				.hasMessage("Identification cannot be changed");
+		assertThat(customer.getPersonalData().identification()).isEqualTo("1712345678");
+	}
+
+	@Test
+	@DisplayName("changing personal data keeps the birth date immutable")
+	void changePersonalDataRejectsNewBirthDate() {
+		Customer customer = Customer.create(personalData(LocalDate.of(1990, 5, 14)), ENCODED_PASSWORD, TODAY);
+
+		assertThatThrownBy(() -> customer.changePersonalData(personalData(LocalDate.of(1991, 5, 14))))
+				.isInstanceOf(DomainValidationException.class)
+				.hasMessage("Birth date cannot be changed");
+		assertThat(customer.getPersonalData().birthDate()).isEqualTo(LocalDate.of(1990, 5, 14));
+	}
+
+	@Test
+	@DisplayName("changing personal data with the same identity data updates the other fields")
+	void changePersonalDataUpdatesOtherFields() {
+		Customer customer = Customer.create(personalData(LocalDate.of(1990, 5, 14)), ENCODED_PASSWORD, TODAY);
+		PersonalData newAddress = new PersonalData("Jose Lema", Gender.MALE, LocalDate.of(1990, 5, 14), "1712345678",
+				"Calle 10", "098254785");
+
+		customer.changePersonalData(newAddress);
+
+		assertThat(customer.getPersonalData().address()).isEqualTo("Calle 10");
+	}
+
 	private static PersonalData personalData(LocalDate birthDate) {
 		return new PersonalData("Jose Lema", Gender.MALE, birthDate, "1712345678", "Otavalo sn y principal",
 				"098254785");

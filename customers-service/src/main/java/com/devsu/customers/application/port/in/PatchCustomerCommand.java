@@ -1,18 +1,14 @@
 package com.devsu.customers.application.port.in;
 
-import java.time.LocalDate;
-
 import com.devsu.customers.domain.model.Gender;
 import com.devsu.customers.domain.model.PersonalData;
 
 /**
- * Partial update of a customer (PATCH): null fields keep their current value.
+ * Partial update of a customer (PATCH): null fields keep their current value. Identification and birth date are immutable.
  */
 public record PatchCustomerCommand(
 		String name,
 		Gender gender,
-		LocalDate birthDate,
-		String identification,
 		String address,
 		String phone,
 		String password,
@@ -22,8 +18,8 @@ public record PatchCustomerCommand(
 		return new PersonalData(
 				valueOrCurrent(name, current.name()),
 				valueOrCurrent(gender, current.gender()),
-				valueOrCurrent(birthDate, current.birthDate()),
-				valueOrCurrent(identification, current.identification()),
+				current.birthDate(),
+				current.identification(),
 				valueOrCurrent(address, current.address()),
 				valueOrCurrent(phone, current.phone()));
 	}

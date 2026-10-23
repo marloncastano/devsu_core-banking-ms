@@ -12,13 +12,11 @@ import com.devsu.customers.application.pagination.PageResult;
 import com.devsu.customers.application.port.in.CreateCustomerCommand;
 import com.devsu.customers.application.port.in.ManageCustomerUseCase;
 import com.devsu.customers.application.port.in.PatchCustomerCommand;
-import com.devsu.customers.application.port.in.UpdateCustomerCommand;
 import com.devsu.customers.application.port.out.CustomerRepositoryPort;
 import com.devsu.customers.application.port.out.PasswordEncoderPort;
 import com.devsu.customers.domain.exception.CustomerNotFoundException;
 import com.devsu.customers.domain.exception.DuplicateCustomerException;
 import com.devsu.customers.domain.model.Customer;
-import com.devsu.customers.domain.model.PersonalData;
 
 @Service
 @Transactional
@@ -56,18 +54,9 @@ public class CustomerService implements ManageCustomerUseCase {
 	}
 
 	@Override
-	public Customer update(UUID customerId, UpdateCustomerCommand command) {
-		Customer customer = findCustomer(customerId);
-		updatePersonalData(customer, command.personalData());
-		customer.changePassword(passwordEncoder.encode(command.password()));
-		customer.changeStatus(command.active());
-		return customerRepository.save(customer);
-	}
-
-	@Override
 	public Customer patch(UUID customerId, PatchCustomerCommand command) {
 		Customer customer = findCustomer(customerId);
-		updatePersonalData(customer, command.applyTo(customer.getPersonalData()));
+		customer.changePersonalData(command.applyTo(customer.getPersonalData()));
 		if (command.password() != null) {
 			customer.changePassword(passwordEncoder.encode(command.password()));
 		}
@@ -87,14 +76,6 @@ public class CustomerService implements ManageCustomerUseCase {
 	private Customer findCustomer(UUID customerId) {
 		return customerRepository.findByCustomerId(customerId)
 				.orElseThrow(() -> new CustomerNotFoundException(customerId));
-	}
-
-	private void updatePersonalData(Customer customer, PersonalData newData) {
-		String currentIdentification = customer.getPersonalData().identification();
-		if (!currentIdentification.equals(newData.identification())) {
-			ensureIdentificationAvailable(newData.identification());
-		}
-		customer.changePersonalData(newData, today());
 	}
 
 	private LocalDate today() {
