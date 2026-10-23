@@ -14,8 +14,6 @@ public interface ManageCustomerUseCase {
 
 	PageResult<Customer> list(PageQuery query);
 
-	Customer update(UUID customerId, UpdateCustomerCommand command);
-
 	Customer patch(UUID customerId, PatchCustomerCommand command);
 
 	/**

@@ -43,8 +43,21 @@ public class Customer extends Person {
 		return new Customer(id, customerId, personalData, encodedPassword, active);
 	}
 
-	public void changePersonalData(PersonalData personalData, LocalDate today) {
-		ensureMinimumAge(personalData, today);
+	/**
+	 * Identification and birth date are identity data verified when the customer was onboarded, so they can never
+	 * change. The minimum age therefore only needs to be checked on creation.
+	 */
+	public void changePersonalData(PersonalData personalData) {
+		if (personalData == null) {
+			throw new DomainValidationException("Personal data is required");
+		}
+		PersonalData current = getPersonalData();
+		if (!current.identification().equals(personalData.identification())) {
+			throw new DomainValidationException("Identification cannot be changed");
+		}
+		if (!current.birthDate().equals(personalData.birthDate())) {
+			throw new DomainValidationException("Birth date cannot be changed");
+		}
 		replacePersonalData(personalData);
 	}
 

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,7 +24,6 @@ import com.devsu.customers.infrastructure.adapter.in.rest.dto.CreateCustomerRequ
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.CustomerResponse;
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.PageResponse;
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.PatchCustomerRequest;
-import com.devsu.customers.infrastructure.adapter.in.rest.dto.UpdateCustomerRequest;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -33,6 +31,7 @@ import jakarta.validation.constraints.Min;
 
 /**
  * The resource path is kept in Spanish because it is part of the required API contract.
+ * There is no PUT: identity data is immutable, so updates are partial and go through PATCH.
  */
 @RestController
 @RequestMapping("/api/clientes")
@@ -66,11 +65,6 @@ public class CustomerController {
 	@GetMapping("/{customerId}")
 	public CustomerResponse getByCustomerId(@PathVariable UUID customerId) {
 		return toResponse(manageCustomer.getByCustomerId(customerId));
-	}
-
-	@PutMapping("/{customerId}")
-	public CustomerResponse update(@PathVariable UUID customerId, @Valid @RequestBody UpdateCustomerRequest request) {
-		return toResponse(manageCustomer.update(customerId, CustomerRestMapper.toCommand(request)));
 	}
 
 	@PatchMapping("/{customerId}")
