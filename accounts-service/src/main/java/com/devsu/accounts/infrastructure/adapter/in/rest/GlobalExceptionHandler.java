@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -23,9 +25,11 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.devsu.accounts.domain.exception.AccountNotAvailableException;
 import com.devsu.accounts.domain.exception.AccountNotFoundException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
 import com.devsu.accounts.domain.exception.DomainValidationException;
+import com.devsu.accounts.domain.exception.InsufficientFundsException;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
@@ -51,6 +55,26 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(CustomerNotAvailableException.class)
 	ProblemDetail handleCustomerNotAvailable(CustomerNotAvailableException ex) {
 		return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Customer not available", ex.getMessage());
+	}
+
+	/**
+	 * F3: a withdrawal without enough balance is a business rule violation, reported with the required message.
+	 */
+	@ExceptionHandler(InsufficientFundsException.class)
+	ProblemDetail handleInsufficientFunds(InsufficientFundsException ex) {
+		return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Insufficient funds", ex.getMessage());
+	}
+
+	@ExceptionHandler(AccountNotAvailableException.class)
+	ProblemDetail handleAccountNotAvailable(AccountNotAvailableException ex) {
+		return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Account not available", ex.getMessage());
+	}
+
+	@ExceptionHandler({ OptimisticLockingFailureException.class, PessimisticLockingFailureException.class })
+	ProblemDetail handleConcurrentModification(RuntimeException ex) {
+		log.warn("Concurrent modification", ex);
+		return problem(HttpStatus.CONFLICT, "Concurrent modification",
+				"The account was modified by another operation. Please retry");
 	}
 
 	@ExceptionHandler(DataIntegrityViolationException.class)

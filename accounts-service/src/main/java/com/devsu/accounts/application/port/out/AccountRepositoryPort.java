@@ -14,6 +14,11 @@ public interface AccountRepositoryPort {
 	Optional<Account> findByAccountNumber(String accountNumber);
 
 	/**
+	 * Loads the account and locks it until the current transaction ends.
+	 */
+	Optional<Account> findByAccountNumberForUpdate(String accountNumber);
+
+	/**
 	 * @param customerId optional filter; {@code null} returns the accounts of every customer.
 	 */
 	PageResult<Account> findAll(PageQuery query, UUID customerId);
