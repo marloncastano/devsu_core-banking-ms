@@ -22,23 +22,27 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.devsu.accounts.application.port.in.MovementRegistration;
 import com.devsu.accounts.application.port.in.RegisterMovementCommand;
 import com.devsu.accounts.application.port.out.AccountRepositoryPort;
 import com.devsu.accounts.application.port.out.CustomerReferenceRepositoryPort;
 import com.devsu.accounts.application.port.out.MovementRepositoryPort;
 import com.devsu.accounts.domain.exception.AccountNotAvailableException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
+import com.devsu.accounts.domain.exception.IdempotencyKeyReusedException;
 import com.devsu.accounts.domain.exception.InsufficientFundsException;
 import com.devsu.accounts.domain.model.Account;
 import com.devsu.accounts.domain.model.AccountType;
 import com.devsu.accounts.domain.model.CustomerReference;
 import com.devsu.accounts.domain.model.Movement;
+import com.devsu.accounts.domain.model.MovementType;
 
 @ExtendWith(MockitoExtension.class)
 class MovementServiceTest {
 
 	private static final UUID CUSTOMER_ID = UUID.fromString("7a7043f4-d803-4a06-961b-efe46efa60de");
 	private static final Instant NOW = Instant.parse("2026-10-22T15:00:00Z");
+	private static final String KEY = "6f1c2a9e-0c43-4b0e-9a6e-3b2f0d8e1c55";
 
 	@Mock
 	private AccountRepositoryPort accountRepository;
@@ -65,7 +69,7 @@ class MovementServiceTest {
 		when(customerReferenceRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(activeCustomer()));
 		when(movementRepository.save(any(Movement.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-		Movement movement = movementService.register(new RegisterMovementCommand("478758", new BigDecimal("-575")));
+		MovementRegistration registration = movementService.register(command("-575", null));
 
 		verify(accountRepository).save(account);
 		assertThat(account.getAvailableBalance()).isEqualTo(new BigDecimal("1425.00"));
@@ -73,7 +77,54 @@ class MovementServiceTest {
 		verify(movementRepository).save(saved.capture());
 		assertThat(saved.getValue().balance()).isEqualTo(new BigDecimal("1425.00"));
 		assertThat(saved.getValue().occurredAt()).isEqualTo(NOW);
-		assertThat(movement).isSameAs(saved.getValue());
+		assertThat(registration.movement()).isSameAs(saved.getValue());
+		assertThat(registration.replayed()).isFalse();
+	}
+
+	@Test
+	@DisplayName("the idempotency key is stored with a new movement")
+	void registerStoresIdempotencyKey() {
+		when(accountRepository.findByAccountNumberForUpdate("478758")).thenReturn(Optional.of(account("2000")));
+		when(movementRepository.findByIdempotencyKey(KEY)).thenReturn(Optional.empty());
+		when(customerReferenceRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(activeCustomer()));
+		when(movementRepository.save(any(Movement.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		MovementRegistration registration = movementService.register(command("-575", KEY));
+
+		assertThat(registration.movement().idempotencyKey()).isEqualTo(KEY);
+		assertThat(registration.replayed()).isFalse();
+	}
+
+	@Test
+	@DisplayName("a retry with the same key returns the original movement without moving money again")
+	void retryWithSameKeyIsReplayed() {
+		Account account = account("1425");
+		Movement original = new Movement(UUID.randomUUID(), 1L, "478758", MovementType.WITHDRAWAL,
+				new BigDecimal("-575.00"), new BigDecimal("1425.00"), NOW, KEY);
+		when(accountRepository.findByAccountNumberForUpdate("478758")).thenReturn(Optional.of(account));
+		when(movementRepository.findByIdempotencyKey(KEY)).thenReturn(Optional.of(original));
+
+		MovementRegistration registration = movementService.register(command("-575", KEY));
+
+		assertThat(registration.replayed()).isTrue();
+		assertThat(registration.movement()).isSameAs(original);
+		assertThat(account.getAvailableBalance()).isEqualTo(new BigDecimal("1425.00"));
+		verify(accountRepository, never()).save(any());
+		verify(movementRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("reusing a key for a different movement is rejected")
+	void reusedKeyForDifferentMovementFails() {
+		Movement original = new Movement(UUID.randomUUID(), 1L, "478758", MovementType.WITHDRAWAL,
+				new BigDecimal("-575.00"), new BigDecimal("1425.00"), NOW, KEY);
+		when(accountRepository.findByAccountNumberForUpdate("478758")).thenReturn(Optional.of(account("1425")));
+		when(movementRepository.findByIdempotencyKey(KEY)).thenReturn(Optional.of(original));
+
+		assertThatThrownBy(() -> movementService.register(command("-600", KEY)))
+				.isInstanceOf(IdempotencyKeyReusedException.class)
+				.hasMessage("Idempotency-Key " + KEY + " was already used for a different movement");
+		verify(movementRepository, never()).save(any());
 	}
 
 	@Test
@@ -82,7 +133,7 @@ class MovementServiceTest {
 		when(accountRepository.findByAccountNumberForUpdate("478758")).thenReturn(Optional.of(account("100")));
 		when(customerReferenceRepository.findById(CUSTOMER_ID)).thenReturn(Optional.of(activeCustomer()));
 
-		assertThatThrownBy(() -> movementService.register(new RegisterMovementCommand("478758", new BigDecimal("-101"))))
+		assertThatThrownBy(() -> movementService.register(command("-101", null)))
 				.isInstanceOf(InsufficientFundsException.class)
 				.hasMessage("Saldo no disponible");
 		verify(accountRepository, never()).save(any());
@@ -94,7 +145,7 @@ class MovementServiceTest {
 	void registerOnUnknownAccountFails() {
 		when(accountRepository.findByAccountNumberForUpdate("999999")).thenReturn(Optional.empty());
 
-		assertThatThrownBy(() -> movementService.register(new RegisterMovementCommand("999999", BigDecimal.TEN)))
+		assertThatThrownBy(() -> movementService.register(new RegisterMovementCommand("999999", BigDecimal.TEN, null)))
 				.isInstanceOf(AccountNotAvailableException.class)
 				.hasMessage("Account 999999 does not exist");
 		verify(movementRepository, never()).save(any());
@@ -107,10 +158,14 @@ class MovementServiceTest {
 		when(customerReferenceRepository.findById(CUSTOMER_ID))
 				.thenReturn(Optional.of(new CustomerReference(CUSTOMER_ID, "Jose Lema", false)));
 
-		assertThatThrownBy(() -> movementService.register(new RegisterMovementCommand("478758", BigDecimal.TEN)))
+		assertThatThrownBy(() -> movementService.register(command("10", null)))
 				.isInstanceOf(CustomerNotAvailableException.class)
 				.hasMessage("Customer " + CUSTOMER_ID + " is inactive");
 		verify(movementRepository, never()).save(any());
+	}
+
+	private static RegisterMovementCommand command(String amount, String key) {
+		return new RegisterMovementCommand("478758", new BigDecimal(amount), key);
 	}
 
 	private static Account account(String balance) {

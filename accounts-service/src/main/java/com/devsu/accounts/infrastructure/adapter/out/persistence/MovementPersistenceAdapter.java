@@ -34,6 +34,7 @@ class MovementPersistenceAdapter implements MovementRepositoryPort {
 		entity.setAmount(movement.amount());
 		entity.setBalance(movement.balance());
 		entity.setOccurredAt(movement.occurredAt());
+		entity.setIdempotencyKey(movement.idempotencyKey());
 		movementJpaRepository.save(entity);
 		return movement;
 	}
@@ -41,6 +42,11 @@ class MovementPersistenceAdapter implements MovementRepositoryPort {
 	@Override
 	public Optional<Movement> findByMovementId(UUID movementId) {
 		return movementJpaRepository.findByMovementId(movementId).map(MovementPersistenceAdapter::toDomain);
+	}
+
+	@Override
+	public Optional<Movement> findByIdempotencyKey(String idempotencyKey) {
+		return movementJpaRepository.findByIdempotencyKey(idempotencyKey).map(MovementPersistenceAdapter::toDomain);
 	}
 
 	/**
@@ -60,6 +66,7 @@ class MovementPersistenceAdapter implements MovementRepositoryPort {
 	private static Movement toDomain(MovementEntity entity) {
 		AccountEntity account = entity.getAccount();
 		return new Movement(entity.getMovementId(), account.getId(), account.getAccountNumber(),
-				entity.getMovementType(), entity.getAmount(), entity.getBalance(), entity.getOccurredAt());
+				entity.getMovementType(), entity.getAmount(), entity.getBalance(), entity.getOccurredAt(),
+				entity.getIdempotencyKey());
 	}
 }

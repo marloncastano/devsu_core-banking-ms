@@ -34,7 +34,7 @@ class MovementControllerQueryTest {
 
 	private static final UUID MOVEMENT_ID = UUID.fromString("0b8f0f3e-6a2e-4c3b-9a55-6c4e1d2f7a10");
 	private static final Movement MOVEMENT = new Movement(MOVEMENT_ID, 1L, "478758", MovementType.WITHDRAWAL,
-			new BigDecimal("-575.00"), new BigDecimal("1425.00"), Instant.parse("2026-10-22T15:00:00Z"));
+			new BigDecimal("-575.00"), new BigDecimal("1425.00"), Instant.parse("2026-10-22T15:00:00Z"), null);
 
 	@Autowired
 	private MockMvcTester mvc;
