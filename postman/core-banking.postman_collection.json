@@ -1,0 +1,1276 @@
+{
+  "info": {
+    "name": "Core Banking - Devsu",
+    "description": "Customers (customers-service) and accounts, movements and reports (accounts-service).\n\nRun the whole collection with the Collection Runner: folder 1 reproduces the use cases of the specification and saves the generated ids in collection variables used by the other folders. Change customersBaseUrl and accountsBaseUrl to point to another server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Casos de uso del enunciado",
+      "item": [
+        {
+          "name": "Crear cliente Jose Lema",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jose Lema\",\n  \"gender\": \"MALE\",\n  \"birthDate\": \"1985-04-12\",\n  \"identification\": \"{{joseIdentification}}\",\n  \"address\": \"Otavalo sn y principal\",\n  \"phone\": \"098254785\",\n  \"password\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"joseIdentification\", String(Math.floor(1000000000 + Math.random() * 8999999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Cliente activo, sin contraseña en la respuesta\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.active).to.eql(true);",
+                  "    pm.expect(body).to.not.have.property(\"password\");",
+                  "});",
+                  "pm.collectionVariables.set(\"joseId\", pm.response.json().customerId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear cliente Marianela Montalvo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Marianela Montalvo\",\n  \"gender\": \"FEMALE\",\n  \"birthDate\": \"1990-08-25\",\n  \"identification\": \"{{marianelaIdentification}}\",\n  \"address\": \"Amazonas y NNUU\",\n  \"phone\": \"097548965\",\n  \"password\": \"5678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"marianelaIdentification\", String(Math.floor(1000000000 + Math.random() * 8999999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Cliente activo, sin contraseña en la respuesta\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.active).to.eql(true);",
+                  "    pm.expect(body).to.not.have.property(\"password\");",
+                  "});",
+                  "pm.collectionVariables.set(\"marianelaId\", pm.response.json().customerId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear cliente Juan Osorio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Osorio\",\n  \"gender\": \"MALE\",\n  \"birthDate\": \"1988-01-30\",\n  \"identification\": \"{{juanIdentification}}\",\n  \"address\": \"13 junio y Equinoccial\",\n  \"phone\": \"098874587\",\n  \"password\": \"1245\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"juanIdentification\", String(Math.floor(1000000000 + Math.random() * 8999999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Cliente activo, sin contraseña en la respuesta\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.active).to.eql(true);",
+                  "    pm.expect(body).to.not.have.property(\"password\");",
+                  "});",
+                  "pm.collectionVariables.set(\"juanId\", pm.response.json().customerId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir cuenta de ahorros de Jose Lema (2000)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 2000,\n  \"customerId\": \"{{joseId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The customers reach accounts-service through RabbitMQ (eventual consistency): give the events a moment.",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo disponible = saldo inicial (2000)\", () => pm.expect(pm.response.json().availableBalance).to.eql(2000));",
+                  "pm.collectionVariables.set(\"joseSavings\", pm.response.json().accountNumber);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir cuenta corriente de Marianela Montalvo (100)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"CHECKING\",\n  \"initialBalance\": 100,\n  \"customerId\": \"{{marianelaId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo disponible = saldo inicial (100)\", () => pm.expect(pm.response.json().availableBalance).to.eql(100));",
+                  "pm.collectionVariables.set(\"marianelaChecking\", pm.response.json().accountNumber);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir cuenta de ahorros de Juan Osorio (0)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 0,\n  \"customerId\": \"{{juanId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo disponible = saldo inicial (0)\", () => pm.expect(pm.response.json().availableBalance).to.eql(0));",
+                  "pm.collectionVariables.set(\"juanSavings\", pm.response.json().accountNumber);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir cuenta de ahorros de Marianela Montalvo (540)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 540,\n  \"customerId\": \"{{marianelaId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo disponible = saldo inicial (540)\", () => pm.expect(pm.response.json().availableBalance).to.eql(540));",
+                  "pm.collectionVariables.set(\"marianelaSavings\", pm.response.json().accountNumber);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir cuenta corriente nueva de Jose Lema (1000)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"CHECKING\",\n  \"initialBalance\": 1000,\n  \"customerId\": \"{{joseId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo disponible = saldo inicial (1000)\", () => pm.expect(pm.response.json().availableBalance).to.eql(1000));",
+                  "pm.collectionVariables.set(\"joseChecking\", pm.response.json().accountNumber);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retiro de 575 (ahorros Jose Lema)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{joseSavings}}\",\n  \"amount\": -575\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo resultante 1425\", () => pm.expect(pm.response.json().balance).to.eql(1425));",
+                  "pm.test(\"Tipo WITHDRAWAL\", () => pm.expect(pm.response.json().movementType).to.eql(\"WITHDRAWAL\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Depósito de 600 (corriente Marianela Montalvo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{marianelaChecking}}\",\n  \"amount\": 600\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo resultante 700\", () => pm.expect(pm.response.json().balance).to.eql(700));",
+                  "pm.test(\"Tipo DEPOSIT\", () => pm.expect(pm.response.json().movementType).to.eql(\"DEPOSIT\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Depósito de 150 (ahorros Juan Osorio)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{juanSavings}}\",\n  \"amount\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo resultante 150\", () => pm.expect(pm.response.json().balance).to.eql(150));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retiro de 540 (ahorros Marianela Montalvo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{marianelaSavings}}\",\n  \"amount\": -540\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Saldo resultante 0\", () => pm.expect(pm.response.json().balance).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "F3 - Retiro sin saldo: Saldo no disponible",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{marianelaSavings}}\",\n  \"amount\": -1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"Mensaje 'Saldo no disponible'\", () => pm.expect(pm.response.json().detail).to.eql(\"Saldo no disponible\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "F4 - Reporte estado de cuenta de Marianela Montalvo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/reportes?fecha={{fromDate}},{{toDate}}&cliente={{marianelaId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const day = d => d.toISOString().slice(0, 10);",
+                  "const today = new Date();",
+                  "// One day of margin on each side so the time zone of the machine running the collection does not matter.",
+                  "pm.collectionVariables.set(\"fromDate\", day(new Date(today.getTime() - 86400000)));",
+                  "pm.collectionVariables.set(\"toDate\", day(new Date(today.getTime() + 86400000)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const report = pm.response.json();",
+                  "pm.test(\"Cliente Marianela Montalvo\", () => pm.expect(report.customerName).to.eql(\"Marianela Montalvo\"));",
+                  "pm.test(\"Dos cuentas con sus saldos: corriente 700 y ahorros 0\", () => {",
+                  "    const balances = report.accounts.map(a => [a.accountType, a.initialBalance, a.availableBalance]);",
+                  "    pm.expect(balances).to.deep.include([\"CHECKING\", 100, 700]);",
+                  "    pm.expect(balances).to.deep.include([\"SAVINGS\", 540, 0]);",
+                  "});",
+                  "pm.test(\"Cada cuenta incluye el detalle de sus movimientos\", () => report.accounts.forEach(a => pm.expect(a.movements).to.have.lengthOf(1)));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Run this folder with the Collection Runner: it reproduces the use cases of the specification (customers, accounts, movements, 'Saldo no disponible' and the account statement) and checks every expected balance."
+    },
+    {
+      "name": "2. Clientes (/api/clientes)",
+      "item": [
+        {
+          "name": "Crear cliente de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cliente Demo\",\n  \"gender\": \"OTHER\",\n  \"birthDate\": \"1995-06-15\",\n  \"identification\": \"{{demoIdentification}}\",\n  \"address\": \"Calle 10\",\n  \"phone\": \"0991234567\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"demoIdentification\", String(Math.floor(1000000000 + Math.random() * 8999999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Cliente activo, sin contraseña en la respuesta\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.active).to.eql(true);",
+                  "    pm.expect(body).to.not.have.property(\"password\");",
+                  "});",
+                  "pm.collectionVariables.set(\"demoCustomerId\", pm.response.json().customerId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar clientes (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{customersBaseUrl}}/api/clientes?page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Respuesta paginada\", () => pm.expect(pm.response.json()).to.have.keys(\"content\", \"page\", \"size\", \"totalElements\", \"totalPages\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar cliente por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{customersBaseUrl}}/api/clientes/{{demoCustomerId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Edad calculada desde la fecha de nacimiento\", () => pm.expect(pm.response.json().age).to.be.a(\"number\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar cliente (PATCH parcial)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes/{{demoCustomerId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Avenida Siempre Viva 742\",\n  \"phone\": \"0987654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Dirección actualizada\", () => pm.expect(pm.response.json().address).to.eql(\"Avenida Siempre Viva 742\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Identificación y fecha de nacimiento son inmutables (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes/{{demoCustomerId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"birthDate\": \"2000-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Datos inválidos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{customersBaseUrl}}/api/clientes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"gender\": \"FAME\",\n  \"birthDate\": \"2030-01-01\",\n  \"identification\": \"12\",\n  \"address\": \"x\",\n  \"phone\": \"abc\",\n  \"password\": \"1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar cliente (borrado lógico)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{customersBaseUrl}}/api/clientes/{{demoCustomerId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente eliminado queda inactivo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{customersBaseUrl}}/api/clientes/{{demoCustomerId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"active = false\", () => pm.expect(pm.response.json().active).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Cliente inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{customersBaseUrl}}/api/clientes/00000000-0000-0000-0000-000000000000"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Full CRUD of customers. Uses its own demo customer so the use case data is left untouched."
+    },
+    {
+      "name": "3. Cuentas (/api/cuentas)",
+      "item": [
+        {
+          "name": "Listar cuentas (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/cuentas?page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar cuentas de un cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/cuentas?customerId={{joseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Jose Lema tiene 2 cuentas\", () => pm.expect(pm.response.json().totalElements).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar cuenta por número",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/cuentas/{{joseChecking}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Corriente de 1000\", () => pm.expect(pm.response.json().availableBalance).to.eql(1000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Desactivar cuenta (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas/{{joseChecking}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cuenta inactiva\", () => pm.expect(pm.response.json().active).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Movimiento sobre cuenta inactiva (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{joseChecking}}\",\n  \"amount\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reactivar cuenta (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas/{{joseChecking}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cuenta activa\", () => pm.expect(pm.response.json().active).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Cliente inexistente (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/cuentas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 0,\n  \"customerId\": \"00000000-0000-0000-0000-000000000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Create, read and update (CRU). Accounts are never deleted: they are frozen with PATCH. Requires folder 1."
+    },
+    {
+      "name": "4. Movimientos (/api/movimientos)",
+      "item": [
+        {
+          "name": "Registrar depósito con Idempotency-Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{joseChecking}}\",\n  \"amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"idempotencyKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"No es un reintento\", () => pm.expect(pm.response.headers.get(\"Idempotent-Replayed\")).to.eql(\"false\"));",
+                  "pm.collectionVariables.set(\"movementId\", pm.response.json().movementId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reintento con la misma Idempotency-Key (no se aplica dos veces)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{joseChecking}}\",\n  \"amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Marcado como reintento\", () => pm.expect(pm.response.headers.get(\"Idempotent-Replayed\")).to.eql(\"true\"));",
+                  "pm.test(\"Devuelve el mismo movimiento\", () => pm.expect(pm.response.json().movementId).to.eql(pm.collectionVariables.get(\"movementId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar movimiento por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/movimientos/{{movementId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Saldo 1250 (1000 + 250, aplicado una sola vez)\", () => pm.expect(pm.response.json().balance).to.eql(1250));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar movimientos de una cuenta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/movimientos?accountNumber={{joseSavings}}&page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Un movimiento\", () => pm.expect(pm.response.json().totalElements).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Monto cero (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{accountsBaseUrl}}/api/movimientos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{joseChecking}}\",\n  \"amount\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Positive amounts are deposits and negative amounts withdrawals. The optional Idempotency-Key header makes retries safe. Requires folder 1."
+    },
+    {
+      "name": "5. Reportes (/api/reportes)",
+      "item": [
+        {
+          "name": "Reporte estado de cuenta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/reportes?fecha={{fromDate}},{{toDate}}&cliente={{joseId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const day = d => d.toISOString().slice(0, 10);",
+                  "const today = new Date();",
+                  "// One day of margin on each side so the time zone of the machine running the collection does not matter.",
+                  "pm.collectionVariables.set(\"fromDate\", day(new Date(today.getTime() - 86400000)));",
+                  "pm.collectionVariables.set(\"toDate\", day(new Date(today.getTime() + 86400000)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Dos cuentas de Jose Lema\", () => pm.expect(pm.response.json().accounts).to.have.lengthOf(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Formato de fecha inválido (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/reportes?fecha=10/2/2022&cliente={{joseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error - Cliente inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{accountsBaseUrl}}/api/reportes?fecha=2026-01-01,2026-01-31&cliente=00000000-0000-0000-0000-000000000000"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "fecha=start,end (yyyy-MM-dd, inclusive) and cliente=customerId. Requires folder 1."
+    }
+  ],
+  "variable": [
+    {
+      "key": "customersBaseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "accountsBaseUrl",
+      "value": "http://localhost:8082"
+    }
+  ]
+}
