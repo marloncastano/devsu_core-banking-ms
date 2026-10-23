@@ -1,6 +1,16 @@
 package com.devsu.accounts.infrastructure.adapter.out.persistence;
 
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+
+import com.devsu.accounts.application.pagination.PageQuery;
+import com.devsu.accounts.application.pagination.PageResult;
 
 import com.devsu.accounts.application.port.out.AccountRepositoryPort;
 import com.devsu.accounts.domain.model.Account;
@@ -27,6 +37,24 @@ class AccountPersistenceAdapter implements AccountRepositoryPort {
 		entity.setAvailableBalance(account.getAvailableBalance());
 		entity.setActive(account.isActive());
 		return toDomain(accountJpaRepository.save(entity));
+	}
+
+	@Override
+	public Optional<Account> findByAccountNumber(String accountNumber) {
+		return accountJpaRepository.findByAccountNumber(accountNumber).map(AccountPersistenceAdapter::toDomain);
+	}
+
+	/**
+	 * Sorted by technical id so pages are stable: the same account never appears on two pages.
+	 */
+	@Override
+	public PageResult<Account> findAll(PageQuery query, UUID customerId) {
+		Pageable pageable = PageRequest.of(query.page(), query.size(), Sort.by(Sort.Direction.ASC, "id"));
+		Page<AccountEntity> page = customerId == null
+				? accountJpaRepository.findAll(pageable)
+				: accountJpaRepository.findByCustomerId(customerId, pageable);
+		return new PageResult<>(page.getContent(), query.page(), query.size(), page.getTotalElements())
+				.map(AccountPersistenceAdapter::toDomain);
 	}
 
 	private static AccountEntity newEntity(Account account) {

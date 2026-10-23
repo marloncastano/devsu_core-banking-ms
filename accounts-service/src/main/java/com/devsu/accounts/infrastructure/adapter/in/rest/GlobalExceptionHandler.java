@@ -23,6 +23,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.devsu.accounts.domain.exception.AccountNotFoundException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
 import com.devsu.accounts.domain.exception.DomainValidationException;
 
@@ -38,6 +39,11 @@ import tools.jackson.databind.exc.UnrecognizedPropertyException;
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+	@ExceptionHandler(AccountNotFoundException.class)
+	ProblemDetail handleNotFound(AccountNotFoundException ex) {
+		return problem(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage());
+	}
 
 	/**
 	 * The request is well formed but references a customer that cannot operate, so it cannot be processed.
