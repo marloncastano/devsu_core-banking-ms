@@ -21,6 +21,9 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+    # Lets the service start on a database created with BaseDatos.sql (schema up to V1) instead of failing.
+    baseline-on-migrate: true
+    baseline-version: 1
   web:
     locale: en
     locale-resolver: fixed
