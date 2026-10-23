@@ -32,6 +32,15 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER}
     password: ${RABBITMQ_PASSWORD}
+    listener:
+      simple:
+        # Failed messages are retried with backoff and then dead-lettered instead of being requeued forever.
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1s
+          multiplier: 2
 
 management:
   endpoints:

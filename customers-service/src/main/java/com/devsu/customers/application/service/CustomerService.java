@@ -7,11 +7,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.devsu.customers.application.event.CustomerEvent;
 import com.devsu.customers.application.pagination.PageQuery;
 import com.devsu.customers.application.pagination.PageResult;
 import com.devsu.customers.application.port.in.CreateCustomerCommand;
 import com.devsu.customers.application.port.in.ManageCustomerUseCase;
 import com.devsu.customers.application.port.in.PatchCustomerCommand;
+import com.devsu.customers.application.port.out.CustomerEventPublisherPort;
 import com.devsu.customers.application.port.out.CustomerRepositoryPort;
 import com.devsu.customers.application.port.out.PasswordEncoderPort;
 import com.devsu.customers.domain.exception.CustomerNotFoundException;
@@ -24,12 +26,14 @@ public class CustomerService implements ManageCustomerUseCase {
 
 	private final CustomerRepositoryPort customerRepository;
 	private final PasswordEncoderPort passwordEncoder;
+	private final CustomerEventPublisherPort eventPublisher;
 	private final Clock clock;
 
 	public CustomerService(CustomerRepositoryPort customerRepository, PasswordEncoderPort passwordEncoder,
-			Clock clock) {
+			CustomerEventPublisherPort eventPublisher, Clock clock) {
 		this.customerRepository = customerRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.eventPublisher = eventPublisher;
 		this.clock = clock;
 	}
 
@@ -38,7 +42,7 @@ public class CustomerService implements ManageCustomerUseCase {
 		ensureIdentificationAvailable(command.personalData().identification());
 
 		Customer customer = Customer.create(command.personalData(), passwordEncoder.encode(command.password()), today());
-		return customerRepository.save(customer);
+		return saveAndPublish(customer, CustomerEvent.Type.CREATED);
 	}
 
 	@Override
@@ -63,14 +67,20 @@ public class CustomerService implements ManageCustomerUseCase {
 		if (command.active() != null) {
 			customer.changeStatus(command.active());
 		}
-		return customerRepository.save(customer);
+		return saveAndPublish(customer, CustomerEvent.Type.UPDATED);
 	}
 
 	@Override
 	public void delete(UUID customerId) {
 		Customer customer = findCustomer(customerId);
 		customer.deactivate();
-		customerRepository.save(customer);
+		saveAndPublish(customer, CustomerEvent.Type.DEACTIVATED);
+	}
+
+	private Customer saveAndPublish(Customer customer, CustomerEvent.Type type) {
+		Customer saved = customerRepository.save(customer);
+		eventPublisher.publish(CustomerEvent.of(type, saved, clock.instant()));
+		return saved;
 	}
 
 	private Customer findCustomer(UUID customerId) {
