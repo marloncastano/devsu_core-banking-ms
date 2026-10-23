@@ -85,7 +85,7 @@ public class Account {
 		}
 		this.availableBalance = newBalance.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY);
 		return new Movement(UUID.randomUUID(), id, accountNumber, MovementType.of(amount),
-				amount.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY), availableBalance, occurredAt);
+				amount.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY), availableBalance, occurredAt, null);
 	}
 
 	/**

@@ -19,10 +19,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
+import com.devsu.accounts.application.port.in.MovementRegistration;
 import com.devsu.accounts.application.port.in.QueryMovementsUseCase;
 import com.devsu.accounts.application.port.in.RegisterMovementCommand;
 import com.devsu.accounts.application.port.in.RegisterMovementUseCase;
 import com.devsu.accounts.domain.exception.AccountNotAvailableException;
+import com.devsu.accounts.domain.exception.IdempotencyKeyReusedException;
 import com.devsu.accounts.domain.exception.InsufficientFundsException;
 import com.devsu.accounts.domain.model.Movement;
 import com.devsu.accounts.domain.model.MovementType;
@@ -47,17 +49,61 @@ class MovementControllerTest {
 	@Test
 	@DisplayName("a valid withdrawal returns 201 with the resulting balance")
 	void registerReturnsMovement() {
-		when(registerMovement.register(new RegisterMovementCommand("478758", new BigDecimal("-575"))))
-				.thenReturn(new Movement(MOVEMENT_ID, 1L, "478758", MovementType.WITHDRAWAL, new BigDecimal("-575.00"),
-						new BigDecimal("1425.00"), Instant.parse("2026-10-22T15:00:00Z")));
+		when(registerMovement.register(new RegisterMovementCommand("478758", new BigDecimal("-575"), null)))
+				.thenReturn(new MovementRegistration(withdrawal(), false));
 
 		MvcTestResult result = post("{ \"accountNumber\": \"478758\", \"amount\": -575 }");
 
 		assertThat(result).hasStatus(HttpStatus.CREATED);
 		assertThat(result).headers().hasValue("Location", "http://localhost/api/movimientos/" + MOVEMENT_ID);
+		assertThat(result).headers().hasValue("Idempotent-Replayed", "false");
 		assertThat(result).bodyJson().extractingPath("$.movementType").isEqualTo("WITHDRAWAL");
 		assertThat(result).bodyJson().extractingPath("$.amount").isEqualTo(-575.00);
 		assertThat(result).bodyJson().extractingPath("$.balance").isEqualTo(1425.00);
+	}
+
+	@Test
+	@DisplayName("the Idempotency-Key header reaches the use case and a replay is flagged in the response")
+	void registerPassesIdempotencyKeyAndFlagsReplay() {
+		String key = "6f1c2a9e-0c43-4b0e-9a6e-3b2f0d8e1c55";
+		when(registerMovement.register(new RegisterMovementCommand("478758", new BigDecimal("-575"), key)))
+				.thenReturn(new MovementRegistration(withdrawal(), true));
+
+		MvcTestResult result = mvc.post().uri("/api/movimientos").header("Idempotency-Key", key)
+				.contentType(MediaType.APPLICATION_JSON).content("{ \"accountNumber\": \"478758\", \"amount\": -575 }")
+				.exchange();
+
+		assertThat(result).hasStatus(HttpStatus.CREATED);
+		assertThat(result).headers().hasValue("Idempotent-Replayed", "true");
+		assertThat(result).bodyJson().extractingPath("$.movementId").isEqualTo(MOVEMENT_ID.toString());
+	}
+
+	@Test
+	@DisplayName("an Idempotency-Key longer than 100 characters returns 400")
+	void registerRejectsTooLongIdempotencyKey() {
+		MvcTestResult result = mvc.post().uri("/api/movimientos").header("Idempotency-Key", "k".repeat(101))
+				.contentType(MediaType.APPLICATION_JSON).content("{ \"accountNumber\": \"478758\", \"amount\": -575 }")
+				.exchange();
+
+		assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
+		verifyNoInteractions(registerMovement);
+	}
+
+	@Test
+	@DisplayName("reusing an Idempotency-Key for a different movement returns 422")
+	void registerReturnsUnprocessableForReusedKey() {
+		when(registerMovement.register(any(RegisterMovementCommand.class)))
+				.thenThrow(new IdempotencyKeyReusedException("abc"));
+
+		MvcTestResult result = post("{ \"accountNumber\": \"478758\", \"amount\": -600 }");
+
+		assertThat(result).hasStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+		assertThat(result).bodyJson().extractingPath("$.title").isEqualTo("Idempotency key reused");
+	}
+
+	private static Movement withdrawal() {
+		return new Movement(MOVEMENT_ID, 1L, "478758", MovementType.WITHDRAWAL, new BigDecimal("-575.00"),
+				new BigDecimal("1425.00"), Instant.parse("2026-10-22T15:00:00Z"), null);
 	}
 
 	@Test

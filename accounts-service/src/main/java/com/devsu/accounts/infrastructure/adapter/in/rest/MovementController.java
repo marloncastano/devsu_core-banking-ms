@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.devsu.accounts.application.pagination.PageQuery;
+import com.devsu.accounts.application.port.in.MovementRegistration;
 import com.devsu.accounts.application.port.in.QueryMovementsUseCase;
 import com.devsu.accounts.application.port.in.RegisterMovementCommand;
 import com.devsu.accounts.application.port.in.RegisterMovementUseCase;
@@ -25,6 +27,7 @@ import com.devsu.accounts.infrastructure.adapter.in.rest.dto.RegisterMovementReq
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 
 /**
  * The resource path is kept in Spanish because it is part of the required API contract.
@@ -32,6 +35,9 @@ import jakarta.validation.constraints.Min;
 @RestController
 @RequestMapping("/api/movimientos")
 public class MovementController {
+
+	static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
+	static final String REPLAYED_HEADER = "Idempotent-Replayed";
 
 	private final RegisterMovementUseCase registerMovement;
 	private final QueryMovementsUseCase queryMovements;
@@ -41,15 +47,24 @@ public class MovementController {
 		this.queryMovements = queryMovements;
 	}
 
+	/**
+	 * The optional Idempotency-Key header makes retries safe: repeating a request with the same key returns the
+	 * original movement instead of moving money twice.
+	 */
 	@PostMapping
-	public ResponseEntity<MovementResponse> register(@Valid @RequestBody RegisterMovementRequest request) {
-		Movement movement = registerMovement.register(
-				new RegisterMovementCommand(request.accountNumber(), request.amount()));
+	public ResponseEntity<MovementResponse> register(
+			@RequestHeader(name = IDEMPOTENCY_KEY_HEADER, required = false) @Size(min = 1, max = 100) String key,
+			@Valid @RequestBody RegisterMovementRequest request) {
+		MovementRegistration registration = registerMovement.register(
+				new RegisterMovementCommand(request.accountNumber(), request.amount(), key));
+		Movement movement = registration.movement();
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
 				.path("/{movementId}")
 				.buildAndExpand(movement.movementId())
 				.toUri();
-		return ResponseEntity.created(location).body(toResponse(movement));
+		return ResponseEntity.created(location)
+				.header(REPLAYED_HEADER, String.valueOf(registration.replayed()))
+				.body(toResponse(movement));
 	}
 
 	@GetMapping

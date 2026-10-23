@@ -13,6 +13,8 @@ public interface MovementRepositoryPort {
 
 	Optional<Movement> findByMovementId(UUID movementId);
 
+	Optional<Movement> findByIdempotencyKey(String idempotencyKey);
+
 	/**
 	 * Most recent first.
 	 *

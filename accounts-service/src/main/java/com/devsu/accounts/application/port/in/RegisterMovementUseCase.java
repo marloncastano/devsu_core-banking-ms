@@ -1,8 +1,9 @@
 package com.devsu.accounts.application.port.in;
 
-import com.devsu.accounts.domain.model.Movement;
-
 public interface RegisterMovementUseCase {
 
-	Movement register(RegisterMovementCommand command);
+	/**
+	 * Applies the movement, or returns the original one when the same Idempotency-Key was already processed.
+	 */
+	MovementRegistration register(RegisterMovementCommand command);
 }

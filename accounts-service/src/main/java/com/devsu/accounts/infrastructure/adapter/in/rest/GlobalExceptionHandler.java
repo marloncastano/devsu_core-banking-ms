@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,6 +30,7 @@ import com.devsu.accounts.domain.exception.AccountNotAvailableException;
 import com.devsu.accounts.domain.exception.AccountNotFoundException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
 import com.devsu.accounts.domain.exception.DomainValidationException;
+import com.devsu.accounts.domain.exception.IdempotencyKeyReusedException;
 import com.devsu.accounts.domain.exception.InsufficientFundsException;
 import com.devsu.accounts.domain.exception.MovementNotFoundException;
 
@@ -64,6 +66,11 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(InsufficientFundsException.class)
 	ProblemDetail handleInsufficientFunds(InsufficientFundsException ex) {
 		return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Insufficient funds", ex.getMessage());
+	}
+
+	@ExceptionHandler(IdempotencyKeyReusedException.class)
+	ProblemDetail handleIdempotencyKeyReused(IdempotencyKeyReusedException ex) {
+		return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Idempotency key reused", ex.getMessage());
 	}
 
 	@ExceptionHandler(AccountNotAvailableException.class)
@@ -108,15 +115,23 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	/**
-	 * Constraint violations on query or path parameters, e.g. {@code size=500}.
+	 * Constraint violations on query, path or header parameters (e.g. {@code size=500}); when an endpoint also
+	 * validates its body, the body field errors arrive here too.
 	 */
 	@Override
 	protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 		Map<String, String> errors = new LinkedHashMap<>();
-		ex.getParameterValidationResults().forEach(result -> result.getResolvableErrors()
-				.forEach(error -> errors.putIfAbsent(result.getMethodParameter().getParameterName(),
-						error.getDefaultMessage())));
+		ex.getParameterValidationResults().forEach(result -> {
+			if (result instanceof ParameterErrors bodyErrors) {
+				// A validated @RequestBody: report each invalid field, as for MethodArgumentNotValidException.
+				bodyErrors.getFieldErrors()
+						.forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+			} else {
+				result.getResolvableErrors().forEach(error -> errors
+						.putIfAbsent(result.getMethodParameter().getParameterName(), error.getDefaultMessage()));
+			}
+		});
 		ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid data", "The request contains invalid parameters");
 		problem.setProperty("errors", errors);
 		return ResponseEntity.badRequest().body(problem);

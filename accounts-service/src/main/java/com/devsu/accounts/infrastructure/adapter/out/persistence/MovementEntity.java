@@ -58,6 +58,9 @@ public class MovementEntity {
 	@Column(name = "occurred_at", nullable = false, updatable = false)
 	private Instant occurredAt;
 
+	@Column(name = "idempotency_key", unique = true, updatable = false, length = 100)
+	private String idempotencyKey;
+
 	@CreationTimestamp
 	@Setter(AccessLevel.NONE)
 	@Column(name = "created_at", nullable = false, updatable = false)

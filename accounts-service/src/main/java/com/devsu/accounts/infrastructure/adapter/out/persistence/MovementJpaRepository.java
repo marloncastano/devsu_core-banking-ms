@@ -17,6 +17,9 @@ interface MovementJpaRepository extends JpaRepository<MovementEntity, Long> {
 	Optional<MovementEntity> findByMovementId(UUID movementId);
 
 	@EntityGraph(attributePaths = "account")
+	Optional<MovementEntity> findByIdempotencyKey(String idempotencyKey);
+
+	@EntityGraph(attributePaths = "account")
 	Page<MovementEntity> findAllBy(Pageable pageable);
 
 	@EntityGraph(attributePaths = "account")
