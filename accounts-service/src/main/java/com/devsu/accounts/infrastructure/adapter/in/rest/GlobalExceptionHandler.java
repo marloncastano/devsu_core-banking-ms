@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import com.devsu.accounts.domain.exception.AccountNotAvailableException;
 import com.devsu.accounts.domain.exception.AccountNotFoundException;
 import com.devsu.accounts.domain.exception.CustomerNotAvailableException;
+import com.devsu.accounts.domain.exception.CustomerNotFoundException;
 import com.devsu.accounts.domain.exception.DomainValidationException;
 import com.devsu.accounts.domain.exception.IdempotencyKeyReusedException;
 import com.devsu.accounts.domain.exception.InsufficientFundsException;
@@ -47,7 +48,8 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-	@ExceptionHandler({ AccountNotFoundException.class, MovementNotFoundException.class })
+	@ExceptionHandler({ AccountNotFoundException.class, MovementNotFoundException.class,
+			CustomerNotFoundException.class })
 	ProblemDetail handleNotFound(RuntimeException ex) {
 		return problem(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage());
 	}
@@ -66,6 +68,13 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(InsufficientFundsException.class)
 	ProblemDetail handleInsufficientFunds(InsufficientFundsException ex) {
 		return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Insufficient funds", ex.getMessage());
+	}
+
+	@ExceptionHandler(InvalidRequestParameterException.class)
+	ProblemDetail handleInvalidParameter(InvalidRequestParameterException ex) {
+		ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid data", "The request contains invalid parameters");
+		problem.setProperty("errors", Map.of(ex.getParameter(), ex.getMessage()));
+		return problem;
 	}
 
 	@ExceptionHandler(IdempotencyKeyReusedException.class)

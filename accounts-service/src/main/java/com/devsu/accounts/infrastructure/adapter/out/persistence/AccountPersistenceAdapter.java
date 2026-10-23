@@ -1,5 +1,6 @@
 package com.devsu.accounts.infrastructure.adapter.out.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,6 +49,12 @@ class AccountPersistenceAdapter implements AccountRepositoryPort {
 	public Optional<Account> findByAccountNumberForUpdate(String accountNumber) {
 		return accountJpaRepository.findByAccountNumberForUpdate(accountNumber)
 				.map(AccountPersistenceAdapter::toDomain);
+	}
+
+	@Override
+	public List<Account> findAllByCustomerId(UUID customerId) {
+		return accountJpaRepository.findByCustomerIdOrderByIdAsc(customerId).stream()
+				.map(AccountPersistenceAdapter::toDomain).toList();
 	}
 
 	/**

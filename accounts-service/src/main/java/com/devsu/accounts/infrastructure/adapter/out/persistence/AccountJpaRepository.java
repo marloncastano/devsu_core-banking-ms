@@ -1,5 +1,6 @@
 package com.devsu.accounts.infrastructure.adapter.out.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ interface AccountJpaRepository extends JpaRepository<AccountEntity, Long> {
 	Optional<AccountEntity> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
 
 	Page<AccountEntity> findByCustomerId(UUID customerId, Pageable pageable);
+
+	List<AccountEntity> findByCustomerIdOrderByIdAsc(UUID customerId);
 
 	@Query(value = "SELECT nextval('account_number_seq')", nativeQuery = true)
 	long nextAccountNumber();
