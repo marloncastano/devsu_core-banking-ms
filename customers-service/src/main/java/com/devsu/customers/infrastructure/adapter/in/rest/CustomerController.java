@@ -3,7 +3,6 @@ package com.devsu.customers.infrastructure.adapter.in.rest;
 import java.net.URI;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -15,17 +14,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.devsu.customers.application.pagination.PageQuery;
 import com.devsu.customers.application.port.in.ManageCustomerUseCase;
 import com.devsu.customers.domain.model.Customer;
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.CreateCustomerRequest;
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.CustomerResponse;
+import com.devsu.customers.infrastructure.adapter.in.rest.dto.PageResponse;
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.PatchCustomerRequest;
 import com.devsu.customers.infrastructure.adapter.in.rest.dto.UpdateCustomerRequest;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 /**
  * The resource path is kept in Spanish because it is part of the required API contract.
@@ -53,8 +57,10 @@ public class CustomerController {
 	}
 
 	@GetMapping
-	public List<CustomerResponse> list() {
-		return manageCustomer.list().stream().map(this::toResponse).toList();
+	public PageResponse<CustomerResponse> list(
+			@RequestParam(defaultValue = "0") @Min(0) int page,
+			@RequestParam(defaultValue = "20") @Min(1) @Max(PageQuery.MAX_SIZE) int size) {
+		return PageResponse.from(manageCustomer.list(new PageQuery(page, size)).map(this::toResponse));
 	}
 
 	@GetMapping("/{customerId}")

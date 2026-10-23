@@ -19,6 +19,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -74,6 +75,21 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ex.getBindingResult().getFieldErrors()
 				.forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
 		ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid data", "The request contains invalid fields");
+		problem.setProperty("errors", errors);
+		return ResponseEntity.badRequest().body(problem);
+	}
+
+	/**
+	 * Constraint violations on query or path parameters, e.g. {@code size=500}.
+	 */
+	@Override
+	protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		Map<String, String> errors = new LinkedHashMap<>();
+		ex.getParameterValidationResults().forEach(result -> result.getResolvableErrors()
+				.forEach(error -> errors.putIfAbsent(result.getMethodParameter().getParameterName(),
+						error.getDefaultMessage())));
+		ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid data", "The request contains invalid parameters");
 		problem.setProperty("errors", errors);
 		return ResponseEntity.badRequest().body(problem);
 	}
