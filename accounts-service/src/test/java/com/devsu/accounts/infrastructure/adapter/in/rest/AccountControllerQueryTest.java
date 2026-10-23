@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -25,7 +26,7 @@ import com.devsu.accounts.domain.model.Account;
 import com.devsu.accounts.domain.model.AccountType;
 
 /**
- * Web layer slice test for GET /api/cuentas and GET /api/cuentas/{accountNumber}.
+ * Web layer slice test for GET /api/cuentas, GET /api/cuentas/{accountNumber} and PATCH /api/cuentas/{accountNumber}.
  */
 @WebMvcTest(AccountController.class)
 class AccountControllerQueryTest {
@@ -105,5 +106,44 @@ class AccountControllerQueryTest {
 
 		assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
 		verifyNoInteractions(manageAccount);
+	}
+
+	@Test
+	@DisplayName("patch changes the status and returns the account")
+	void patchChangesStatus() {
+		Account frozen = Account.restore(1L, "100000", AccountType.SAVINGS, new BigDecimal("2000"),
+				new BigDecimal("1425"), false, CUSTOMER_ID);
+		when(manageAccount.changeStatus("100000", false)).thenReturn(frozen);
+
+		MvcTestResult result = patch("100000", "{ \"active\": false }");
+
+		assertThat(result).hasStatus(HttpStatus.OK);
+		assertThat(result).bodyJson().extractingPath("$.active").isEqualTo(false);
+		assertThat(result).bodyJson().extractingPath("$.availableBalance").isEqualTo(1425.00);
+	}
+
+	@Test
+	@DisplayName("patch rejects immutable fields such as the balance")
+	void patchRejectsImmutableFields() {
+		MvcTestResult result = patch("100000", "{ \"active\": true, \"availableBalance\": 1000000 }");
+
+		assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(result).bodyJson().extractingPath("$.detail").isEqualTo("Unknown field 'availableBalance'");
+		verifyNoInteractions(manageAccount);
+	}
+
+	@Test
+	@DisplayName("patch without status returns 400")
+	void patchRequiresStatus() {
+		MvcTestResult result = patch("100000", "{}");
+
+		assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(result).bodyJson().extractingPath("$.errors.active").isEqualTo("must not be null");
+		verifyNoInteractions(manageAccount);
+	}
+
+	private MvcTestResult patch(String accountNumber, String body) {
+		return mvc.patch().uri("/api/cuentas/" + accountNumber).contentType(MediaType.APPLICATION_JSON).content(body)
+				.exchange();
 	}
 }

@@ -88,6 +88,26 @@ public class Account {
 				amount.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY), availableBalance, occurredAt);
 	}
 
+	/**
+	 * Freezes the account: balance and history are kept, but it no longer accepts movements.
+	 */
+	public void deactivate() {
+		this.active = false;
+	}
+
+	/**
+	 * Unfreezes the account. Only possible while its owner is an active customer.
+	 */
+	public void activate(CustomerReference owner) {
+		if (owner == null || !owner.customerId().equals(customerId)) {
+			throw new DomainValidationException("The owner of the account is required");
+		}
+		if (!owner.active()) {
+			throw CustomerNotAvailableException.inactive(customerId);
+		}
+		this.active = true;
+	}
+
 	private static BigDecimal toMoney(BigDecimal amount, String field) {
 		if (amount == null) {
 			throw new DomainValidationException(field + " is required");

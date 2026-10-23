@@ -49,6 +49,23 @@ public class AccountService implements ManageAccountUseCase {
 				.orElseThrow(() -> new AccountNotFoundException(accountNumber));
 	}
 
+	/**
+	 * Locks the account so a status change never interleaves with a movement in progress.
+	 */
+	@Override
+	public Account changeStatus(String accountNumber, boolean active) {
+		Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
+				.orElseThrow(() -> new AccountNotFoundException(accountNumber));
+		if (active) {
+			CustomerReference owner = customerReferenceRepository.findById(account.getCustomerId())
+					.orElseThrow(() -> CustomerNotAvailableException.notFound(account.getCustomerId()));
+			account.activate(owner);
+		} else {
+			account.deactivate();
+		}
+		return accountRepository.save(account);
+	}
+
 	@Override
 	@Transactional(readOnly = true)
 	public PageResult<Account> list(PageQuery query, UUID customerId) {

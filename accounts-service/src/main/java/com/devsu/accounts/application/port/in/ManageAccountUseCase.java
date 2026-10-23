@@ -13,6 +13,11 @@ public interface ManageAccountUseCase {
 	Account getByAccountNumber(String accountNumber);
 
 	/**
+	 * Freezes or unfreezes an account. Balances, type and owner are immutable.
+	 */
+	Account changeStatus(String accountNumber, boolean active);
+
+	/**
 	 * @param customerId optional filter; {@code null} lists the accounts of every customer.
 	 */
 	PageResult<Account> list(PageQuery query, UUID customerId);
